@@ -51,7 +51,7 @@ class Users {
 
     }
 
-    getalldata=()=>{
+    getalldata=(req,res)=>{
         Usersmodal.find().then((result)=>{
             console.log("results",result)
             return res.json({status:true,message:"data fetched",data:result})

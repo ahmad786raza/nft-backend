@@ -34,8 +34,11 @@ const fileFilter = (req, file, cb) => {
       cb(null, false)
   }
 }
-app.use(multer({storage:fileStorage, fileFilter:fileFilter}).single('artImage'))
 
+app.use(multer({storage:fileStorage, fileFilter:fileFilter}).single('artImage'))
+app.use(express.static('public'))
+
+app.use("/images",express.static('images'))
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
