@@ -17,6 +17,8 @@ var upload = multer({ storage: storage })
 /* GET users listing. */
 router.post('/uploadImage', controllers.uploadImage);
 router.get('/getTokenId',controllers.getTokenID);
-router.get('/getalldata',controllers.getalldata)
+router.get('/getalldata',controllers.getalldata);
+router.post('/getsingledata',controllers.getSingleData);
+// router.get('etheraddress',controllers.getEtherAdd)
 
 module.exports = router;

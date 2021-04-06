@@ -7,6 +7,8 @@ const Mongoose = require("mongoose");
 const multer = require('multer');
 const fs = require('fs');
 var cors = require('cors')
+require('dotenv').config();
+
 
 
 
