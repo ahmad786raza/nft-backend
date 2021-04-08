@@ -1,21 +1,8 @@
-
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const userSchema = new Schema({
+const PaymentModalSchema = new Schema({
     assetName: {
-        type: String,
-        required: true
-    },
-    price: {
-        type: Number,
-        required: true
-    },
-    artImage: {
-        type: String,
-        required: true
-    },
-    description: {
         type: String,
         required: true
     },
@@ -23,20 +10,34 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
-    owner: {
+    newOwnerAddrs: {
         type: String,
         required: true
     },
-    soldStatus: {
-        type:String,
-        default:0
+    contractAddrs: {
+        type: String,
+        required: true
+    },
+    fromAddrs: {
+        type: String,
+        required: true
+    },
+    boughtTokenHash: {
+        type: String,
+        required: true
+    },
+    transferTokenHash: {
+        type: String,
+        required: true
+    },
+    tokenPrice: {
+        type: Number,
+        required: true
     },
     createdAt: {
         type: Date,
         default: Date.now
-    },
+    }
 })
 
-
-module.exports = mongoose.model('Userschema', userSchema);
-
+module.exports = mongoose.model('paymentschema', PaymentModalSchema);
