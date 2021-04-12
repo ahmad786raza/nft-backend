@@ -21,4 +21,5 @@ router.get('/getalldata',controllers.getalldata);
 router.post('/getsingledata',controllers.getSingleData);
 router.post('/paymentdetail',controllers.payDetails);
 
+
 module.exports = router;

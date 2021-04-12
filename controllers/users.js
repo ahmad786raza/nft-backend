@@ -2,9 +2,10 @@ const Usersmodal = require('../modals/users');
 const Paymentmodal = require('../modals/Paymentmodal');
 const assetabi = require('../abis/assets.json');
 const ethers = require("ethers");
+const ipfsAPI = require('ipfs-api');
+const fs = require('fs');
 require('dotenv').config();
-
-
+const ipfs = ipfsAPI('ipfs.infura.io', '5001', { protocol: 'https' })
 
 
 
@@ -12,18 +13,12 @@ require('dotenv').config();
 class Users {
 
 
-
     uploadImage(req, res, next) {
-        const { assetName, price, description, tokenId, owner } = req.body
-        const image = req.file
-        if (!image) {
-            return res.status(500).json({ message: 'image not found' })
-        }
-        const artImage = image.path;
+        const { assetName, price, description, tokenId, owner,ipfsHash } = req.body 
         const users = new Usersmodal({
             assetName: assetName,
             price: price,
-            artImage: artImage,
+            ipfsHash: ipfsHash,
             description: description,
             tokenId: tokenId,
             owner: owner
@@ -94,7 +89,6 @@ class Users {
                 })
 
                 paydetails.save().then((saveddata) => {
-
                     Usersmodal.findOneAndUpdate({ tokenId: tokenId }, { soldStatus: 1 }, { new: true }).then((respo) => {
                         console.log("respo", respo)
                     }).catch((errss) => {

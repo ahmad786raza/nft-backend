@@ -7,16 +7,16 @@ const Mongoose = require("mongoose");
 const multer = require('multer');
 const fs = require('fs');
 var cors = require('cors')
+var indexRouter = require('./routes/index');
+var routes = require('./routes/routes');
 require('dotenv').config();
 
 
 
-
-var indexRouter = require('./routes/index');
-var routes = require('./routes/routes');
-
 var app = express();
 app.use(cors())
+
+
 
 
 const fileStorage = multer.diskStorage({
