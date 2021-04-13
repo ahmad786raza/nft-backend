@@ -1,11 +1,15 @@
 const Usersmodal = require('../modals/users');
 const Paymentmodal = require('../modals/Paymentmodal');
+const Registermodal = require("../modals/register");
 const assetabi = require('../abis/assets.json');
 const ethers = require("ethers");
+const jwt = require('jsonwebtoken');
 const ipfsAPI = require('ipfs-api');
 const fs = require('fs');
+const bcrypt = require('bcrypt');
 require('dotenv').config();
 const ipfs = ipfsAPI('ipfs.infura.io', '5001', { protocol: 'https' })
+const saltRounds = 10;
 
 
 
@@ -14,7 +18,7 @@ class Users {
 
 
     uploadImage(req, res, next) {
-        const { assetName, price, description, tokenId, owner,ipfsHash } = req.body 
+        const { assetName, price, description, tokenId, owner, ipfsHash } = req.body
         const users = new Usersmodal({
             assetName: assetName,
             price: price,
@@ -38,6 +42,7 @@ class Users {
     };
 
     getTokenID(req, res) {
+        console.log("gettokenid hit")
         Usersmodal.countDocuments().then((count) => {
             console.log('========count', count)
             var tokenID = ++count
@@ -113,9 +118,75 @@ class Users {
         })
     }
 
+    register = (req, res) => {
+        console.log('=======', req.body)
+        const { userName, email, password, confirmPass } = req.body
+        if (password !== confirmPass) {
+            res.json({ status: false, message: "Confirm Password didn't match" })
+        } else {
+            Registermodal.findOne({ email: email }).then(async (respdata) => {
+                console.log(respdata)
+                if (respdata) {
+                    res.json({ status: false, message: "User already exist" })
+                } else {
+                    var newuser = new Registermodal({
+                        userName: userName,
+                        email: email,
+                        password: await bcrypt.hashSync(password, saltRounds),
+                        confirmPass: confirmPass
+                    })
 
+                    newuser.save().then((resps) => {
+                        console.log("=====", resps)
+                        if (resps) {
+                            res.json({ status: true, message: "Registered Successfull,Data saved" })
+                        } else {
+                            res.json({ status: false, message: "Registration failed,Data not saved." })
+                        }
+                    })
+                }
+            }).catch((errs) => {
+                console.log(errs)
+                res.json({ status: false, message: "Something went wrong" })
+            })
+        }
+    }
 
+    login = (req, res) => {
+        const { email, password } = req.body
+        console.log("request-body", email, password)
+        Registermodal.findOne({ email: email }).then(async (respp) => {
+            console.log("respppp=========", respp)
+            if (respp) {
+                console.log("iffffff")
+                const match = await bcrypt.compare(password, respp.password);
+                if (match) {
+                    var token = jwt.sign({ email: respp.email }, process.env.SECRETKEY_JWT);
+                    var myquery = { email: email };
+                    var newvalues = { $set: { token: token } };
+                    Registermodal.findOneAndUpdate(myquery, newvalues, function (err, respo) {
+                        if (err) {
+                            res.json({ status: false, message: "token not saved" })
+                        } else {
+                            res.json({ status: true, message: "Login successful.", token: token })
+                        }
+                    })
+                } else {
+                    res.json({ status: false, message: "email and password is incorrect" })
+                }
+            } else {
+                console.log("elseeeeeeeeeeeef")
+                res.json({ status: false, message: "User not found" })
 
+            }
+
+        }).catch((errss) => {
+            console.log('errss', errss)
+        })
+
+    }
+
+    
 }
 
 module.exports = new Users()
