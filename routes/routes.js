@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 
 
 verifytoken = (req, res, next) => {
-  console.log("req.headers.Authorization", req.headers.authtoken)
+  console.log("req.headers", req.headers)
   var token = req.headers.authtoken
   console.log("tokenvalue===",token)
   if (token) {
@@ -45,7 +45,7 @@ verifytoken = (req, res, next) => {
 /* GET users listing. */
 router.post('/uploadImage',verifytoken, controllers.uploadImage);
 router.get('/getTokenId',verifytoken,controllers.getTokenID);
-router.get('/getalldata',verifytoken,controllers.getalldata);
+router.get('/getalldata',controllers.getalldata);
 router.post('/getsingledata',verifytoken,controllers.getSingleData);
 router.post('/paymentdetail',verifytoken,controllers.payDetails);
 router.post('/register',controllers.register);
