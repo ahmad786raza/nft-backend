@@ -13,8 +13,8 @@ verifytoken = (req, res, next) => {
   if (token) {
       jwt.verify(token, process.env.SECRETKEY_JWT, function (err, respData) {
           if (err) {
-            console.log("ifcaseverifytoken")
-              return res.json({ status: false, message: "Authorization failed" })
+            console.log("ifcaseverifytoken",err)
+           return res.json({ status: false, message: "Your session has expired! Please login again" })
           } else {
               console.log("decoded", respData.email);
               var email = respData.email;

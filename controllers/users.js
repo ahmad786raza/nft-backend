@@ -15,10 +15,9 @@ const saltRounds = 10;
 
 
 class Users {
-
-
     uploadImage(req, res, next) {
         const { assetName, price, description, tokenId, owner, ipfsHash } = req.body
+        console.log("req.body uploadimage", req.body)
         const users = new Usersmodal({
             assetName: assetName,
             price: price,
@@ -42,7 +41,6 @@ class Users {
     };
 
     getTokenID(req, res) {
-        console.log("gettokenid hit")
         Usersmodal.countDocuments().then((count) => {
             console.log('========count', count)
             var tokenID = ++count
@@ -73,7 +71,7 @@ class Users {
     }
 
     payDetails = (req, res) => {
-        console.log('requestbody', req.body);
+        console.log('requestbody_paydetails', req.body);
         const { assetName, tokenId, newOwnerAddrs, boughtTokenHash, tokenPrice } = req.body;
         const provider = new ethers.providers.JsonRpcProvider('https://rinkeby.infura.io/v3/f99366737d854f5e91ab29dad087fcd5');
         const privatekey = process.env.TOKENOWNER_PRIVATEKEY
@@ -81,7 +79,7 @@ class Users {
         const contract = new ethers.Contract(process.env.CONTRACT_ADDRESS, assetabi, wallet);
         contract.transferFrom(process.env.TOKENOWNER_PUBLICKEY, newOwnerAddrs, tokenId).then((respdata) => {
             if (respdata.hash) {
-                console.log('data=========', respdata.hash, process.env.CONTRACT_ADDRESS, respdata.hash, respdata.from)
+                // console.log('data=========', respdata.hash, process.env.CONTRACT_ADDRESS, respdata.hash, respdata.from)
                 let paydetails = new Paymentmodal({
                     assetName: assetName,
                     tokenId: tokenId,
@@ -95,37 +93,36 @@ class Users {
 
                 paydetails.save().then((saveddata) => {
                     Usersmodal.findOneAndUpdate({ tokenId: tokenId }, { soldStatus: 1 }, { new: true }).then((respo) => {
-                        console.log("respo", respo)
+                        // console.log("respo", respo)
                     }).catch((errss) => {
                         console.log("error")
                     })
 
-                    console.log("detailssave", saveddata)
+                    // console.log("detailssave", saveddata)
                     return res.json({ status: true, message: "Transection successfull,data saved.", data: saveddata })
                 }).catch((errs) => {
-                    console.log('errrrrrr', errs)
+                    // console.log('errrrrrr', errs)
                     return res.json({ status: false, message: "Transection failed,Something went wrong try again." })
                 })
             } else {
-                console.log('else case=========')
                 return res.json({ status: false, message: "Transection failed,try again." })
             }
 
         }).catch((errrs) => {
-            console.log('errrs===', errrs)
-            return res.json({ status: false, message: "Transection failed,Something went wrong try again." })
+            // console.log('errrs===', errrs)
+            return res.json({ status: false, message: "Transection failed! Something went wrong try again." })
 
         })
     }
 
     register = (req, res) => {
-        console.log('=======', req.body)
+        // console.log('req.body_register', req.body)
         const { userName, email, password, confirmPass } = req.body
         if (password !== confirmPass) {
             res.json({ status: false, message: "Confirm Password didn't match" })
         } else {
             Registermodal.findOne({ email: email }).then(async (respdata) => {
-                console.log(respdata)
+                // console.log(respdata)
                 if (respdata) {
                     res.json({ status: false, message: "User already exist" })
                 } else {
@@ -137,7 +134,7 @@ class Users {
                     })
 
                     newuser.save().then((resps) => {
-                        console.log("=====", resps)
+                        // console.log("=====", resps)
                         if (resps) {
                             res.json({ status: true, message: "Registered Successfull,Data saved" })
                         } else {
@@ -146,19 +143,17 @@ class Users {
                     })
                 }
             }).catch((errs) => {
-                console.log(errs)
-                res.json({ status: false, message: "Something went wrong" })
+                console.log("findOne_catchblock", errs)
+                res.json({ status: false, message: "Something went wrong,try again" })
             })
         }
     }
 
     login = (req, res) => {
         const { email, password } = req.body
-        console.log("request-body", email, password)
+        // console.log("request-body", email, password)
         Registermodal.findOne({ email: email }).then(async (respp) => {
-            console.log("respppp=========", respp)
             if (respp) {
-                console.log("iffffff")
                 const match = await bcrypt.compare(password, respp.password);
                 if (match) {
                     var token = jwt.sign({ email: respp.email }, process.env.SECRETKEY_JWT);
@@ -175,18 +170,17 @@ class Users {
                     res.json({ status: false, message: "email and password is incorrect" })
                 }
             } else {
-                console.log("elseeeeeeeeeeeef")
                 res.json({ status: false, message: "User not found" })
-
             }
 
         }).catch((errss) => {
-            console.log('errss', errss)
+            res.json({ status: false, message: "Something went wrong,try again" })
+            // console.log('errss_catchblock', errss)
         })
 
     }
 
-    
+
 }
 
 module.exports = new Users()
