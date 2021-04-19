@@ -1,6 +1,7 @@
 const Usersmodal = require('../modals/users');
 const Paymentmodal = require('../modals/Paymentmodal');
 const Registermodal = require("../modals/register");
+const Tokennotlistusermodel = require('../modals/tokennotlistmodel');
 const assetabi = require('../abis/assets.json');
 const ethers = require("ethers");
 const jwt = require('jsonwebtoken');
@@ -15,6 +16,8 @@ const saltRounds = 10;
 
 
 class Users {
+
+
     uploadImage(req, res, next) {
         const { assetName, price, description, tokenId, owner, ipfsHash } = req.body
         console.log("req.body uploadimage", req.body)
@@ -34,10 +37,7 @@ class Users {
             }).catch((err) => {
                 return res.json({ status: false, message: "Image upload failed." })
 
-            }
-            )
-
-
+            })
     };
 
     getTokenID(req, res) {
@@ -160,10 +160,11 @@ class Users {
                     var myquery = { email: email };
                     var newvalues = { $set: { token: token } };
                     Registermodal.findOneAndUpdate(myquery, newvalues, function (err, respo) {
+                        console.log("========respo", respo)
                         if (err) {
                             res.json({ status: false, message: "token not saved" })
                         } else {
-                            res.json({ status: true, message: "Login successful.", token: token })
+                            res.json({ status: true, message: "Login successful.", data: respo })
                         }
                     })
                 } else {
@@ -177,8 +178,47 @@ class Users {
             res.json({ status: false, message: "Something went wrong,try again" })
             // console.log('errss_catchblock', errss)
         })
+    }
+
+
+    tokennotlisted = (req, res) => {
+        const { assetName, price, description, tokenId, owner, ipfsHash, email } = req.body
+        console.log("==========", req.body)
+
+        const notlistedusers = new Tokennotlistusermodel({
+            assetName: assetName,
+            price: price,
+            ipfsHash: ipfsHash,
+            description: description,
+            tokenId: tokenId,
+            owner: owner,
+            email: email
+        })
+        notlistedusers.save().then((saveddata) => {
+            console.log("saveddata====", saveddata)
+            if (!saveddata) {
+                return res.json({ status: "false", message: "Details not saved." })
+            } else {
+                return res.json({ status: "true", message: "Details saved.", data: saveddata })
+            }
+        }).catch((errors) => {
+            console.log("errors", errors)
+        })
 
     }
+
+    // sellerdata = (req, res) => {
+    //     const totalPrice ;
+    //     const exchangePrice;
+    //     const tokenBuyingPrice;
+
+    //     const { sellingPrice } = req.body
+    //     const 
+
+
+    // }
+
+
 
 
 }

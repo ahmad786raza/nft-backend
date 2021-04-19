@@ -50,6 +50,7 @@ router.post('/getsingledata',verifytoken,controllers.getSingleData);
 router.post('/paymentdetail',verifytoken,controllers.payDetails);
 router.post('/register',controllers.register);
 router.post('/login',controllers.login)
+router.post('/tokennotlist',controllers.tokennotlisted)
 
 
 module.exports = router;
