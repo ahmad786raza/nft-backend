@@ -51,6 +51,8 @@ router.post('/paymentdetail',verifytoken,controllers.payDetails);
 router.post('/register',controllers.register);
 router.post('/login',controllers.login)
 router.post('/tokennotlist',controllers.tokennotlisted)
+router.get('/getallnotlisteddata',controllers.getallnotlisteddata)
+router.post('/updatelisteddata',controllers.updateListedTable)
 
 
 module.exports = router;

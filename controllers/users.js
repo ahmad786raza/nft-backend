@@ -8,6 +8,7 @@ const jwt = require('jsonwebtoken');
 const ipfsAPI = require('ipfs-api');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
+const Mongoose  = require('mongoose');
 require('dotenv').config();
 const ipfs = ipfsAPI('ipfs.infura.io', '5001', { protocol: 'https' })
 const saltRounds = 10;
@@ -19,7 +20,7 @@ class Users {
 
 
     uploadImage(req, res, next) {
-        const { assetName, price, description, tokenId, owner, ipfsHash } = req.body
+        const { assetName, price, description, tokenId, owner, ipfsHash, email } = req.body
         console.log("req.body uploadimage", req.body)
         const users = new Usersmodal({
             assetName: assetName,
@@ -27,7 +28,8 @@ class Users {
             ipfsHash: ipfsHash,
             description: description,
             tokenId: tokenId,
-            owner: owner
+            owner: owner,
+            email: email
         })
         users.save()
             .then((result) => {
@@ -51,10 +53,33 @@ class Users {
 
     }
 
+    updateListedTable = (req, res) => {
+        console.log("req.body", req.body)
+        const { id } = req.body
+
+        Usersmodal.findOneAndUpdate({ "_id": Mongoose.Types.ObjectId(id) }, { $set: { status: 0 } }, { new: true }).then((updatedData) => {
+            console.log("updatedData", updatedData)
+            res.json({status:true,message:" status updated",data:updatedData})
+        }).catch((errors) => {
+            console.log("errors===", errors)
+        })
+    }
+
     getalldata = (req, res) => {
-        Usersmodal.find().then((result) => {
+        Usersmodal.find({status:1}).then((result) => {
             return res.json({ status: true, message: "data fetched", data: result })
         }).catch((errrs) => {
+            res.json({ status: false, message: "Something went wrong,data not available" })
+        })
+    }
+
+    getallnotlisteddata = (req, res) => {
+        console.log("getallnonlisteddata")
+        Tokennotlistusermodel.find().then((result) => {
+            console.log("list====", result)
+            return res.json({ status: true, message: "All data fetched successfully.", data: result })
+        }).catch((errs) => {
+            console.log("errr", errs)
             res.json({ status: false, message: "Something went wrong,data not available" })
         })
     }
@@ -151,12 +176,13 @@ class Users {
 
     login = (req, res) => {
         const { email, password } = req.body
-        // console.log("request-body", email, password)
-        Registermodal.findOne({ email: email }).then(async (respp) => {
+        console.log("request-body", email, password)
+        Registermodal.findOne({ email: email, userType: parseInt(req.body.userType) }).then(async (respp) => {
             if (respp) {
                 const match = await bcrypt.compare(password, respp.password);
                 if (match) {
                     var token = jwt.sign({ email: respp.email }, process.env.SECRETKEY_JWT);
+                    console.log("findone-response", respp, token)
                     var myquery = { email: email };
                     var newvalues = { $set: { token: token } };
                     Registermodal.findOneAndUpdate(myquery, newvalues, function (err, respo) {

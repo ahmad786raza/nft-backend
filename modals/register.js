@@ -19,6 +19,11 @@ const registerSchema = new Schema({
         type: String,
         required: true
     },
+    userType: {
+        type: Number,
+        required: true,
+        default:1                  //1=>user ,2=admin
+    },
     token: {
         type: String,
         default: ""

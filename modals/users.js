@@ -7,6 +7,10 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
+    status: {
+        type: Number,
+        default: 1
+    },
     price: {
         type: Number,
         required: true
@@ -27,9 +31,13 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
+    email: {
+        type: String,
+        required: true
+    },
     soldStatus: {
-        type:String,
-        default:0
+        type: String,
+        default: 0
     },
     createdAt: {
         type: Date,
