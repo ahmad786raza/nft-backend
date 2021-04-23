@@ -35,6 +35,10 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
+    hide:{
+        type: String,
+        required: true
+    },
     soldStatus: {
         type: String,
         default: 0
