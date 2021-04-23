@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 const ipfsAPI = require('ipfs-api');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
-const Mongoose  = require('mongoose');
+const Mongoose = require('mongoose');
 require('dotenv').config();
 const ipfs = ipfsAPI('ipfs.infura.io', '5001', { protocol: 'https' })
 const saltRounds = 10;
@@ -59,14 +59,14 @@ class Users {
 
         Usersmodal.findOneAndUpdate({ "_id": Mongoose.Types.ObjectId(id) }, { $set: { status: 0 } }, { new: true }).then((updatedData) => {
             console.log("updatedData", updatedData)
-            res.json({status:true,message:" status updated",data:updatedData})
+            res.json({ status: true, message: " status updated", data: updatedData })
         }).catch((errors) => {
             console.log("errors===", errors)
         })
     }
 
     getalldata = (req, res) => {
-        Usersmodal.find({status:1}).then((result) => {
+        Usersmodal.find({ status: 1 }).then((result) => {
             return res.json({ status: true, message: "data fetched", data: result })
         }).catch((errrs) => {
             res.json({ status: false, message: "Something went wrong,data not available" })
@@ -185,8 +185,15 @@ class Users {
                     console.log("findone-response", respp, token)
                     var myquery = { email: email };
                     var newvalues = { $set: { token: token } };
-                    Registermodal.findOneAndUpdate(myquery, newvalues, function (err, respo) {
+
+                    Registermodal.findOneAndUpdate(myquery, newvalues, {
+                        "fields": { "password":0, "confirmPass": 0 },
+                        "new": true 
+                       }, function (err, respo) {
                         console.log("========respo", respo)
+                      
+                        // const propsToRemove = ['password', 'confirmPass']
+
                         if (err) {
                             res.json({ status: false, message: "token not saved" })
                         } else {
