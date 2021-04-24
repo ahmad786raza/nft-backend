@@ -37,7 +37,7 @@ const userSchema = new Schema({
     },
     hide:{
         type: String,
-        required: true
+        default: "Not-Hidden"
     },
     soldStatus: {
         type: String,

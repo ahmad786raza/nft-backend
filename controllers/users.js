@@ -33,10 +33,9 @@ class Users {
         })
         users.save()
             .then((result) => {
-                if (result) {
                     return res.json({ status: true, message: "Image uploaded successfull.", data: result })
-                }
             }).catch((err) => {
+                console.log("erro in saving data",err);
                 return res.json({ status: false, message: "Image upload failed." })
 
             })
@@ -57,9 +56,12 @@ class Users {
         console.log("req.body", req.body)
         const { id , status } = req.body
 
+        var data_status;
 
+        if(status === 'Not-Hidden')data_status = 1
+        else data_status = 0
 
-        Usersmodal.findOneAndUpdate({ "_id": Mongoose.Types.ObjectId(id) }, { $set: { hide: status } }, { new: true }).then((updatedData) => {
+        Usersmodal.findOneAndUpdate({ "_id": Mongoose.Types.ObjectId(id) }, { $set: { hide: status, status:data_status } }, { new: true }).then((updatedData) => {
             console.log("updatedData", updatedData)
             res.json({status:true,message:" status updated",data:updatedData})
         }).catch((errors) => {
@@ -71,6 +73,14 @@ class Users {
 
     getalldata = (req, res) => {
         Usersmodal.find({status:1}).then((result) => {
+            return res.json({ status: true, message: "data fetched", data: result })
+        }).catch((errrs) => {
+            res.json({ status: false, message: "Something went wrong,data not available" })
+        })
+    }
+
+    getalldataforAdmin = (req, res) => {
+        Usersmodal.find().then((result) => {
             return res.json({ status: true, message: "data fetched", data: result })
         }).catch((errrs) => {
             res.json({ status: false, message: "Something went wrong,data not available" })
@@ -186,16 +196,17 @@ class Users {
                 const match = await bcrypt.compare(password, respp.password);
                 if (match) {
                     var token = jwt.sign({ email: respp.email }, process.env.SECRETKEY_JWT);
-                    console.log("findone-response", respp, token)
+                    console.log("findone-response", token)
                     var myquery = { email: email };
                     var newvalues = { $set: { token: token } };
-                    Registermodal.findOneAndUpdate(myquery, newvalues, function (err, respo) {
-                        console.log("========respo", respo)
-                        if (err) {
-                            res.json({ status: false, message: "token not saved" })
-                        } else {
+                    Registermodal.findOneAndUpdate({ email: email }, { $set: { token: token } }, { new: true }).then((respo) => {
+                        console.log("========respo after login", respo)
+                       
                             res.json({ status: true, message: "Login successful.", data: respo })
-                        }
+                        
+                    }).catch((error)=>{
+                        res.json({ status: false, message: error })
+
                     })
                 } else {
                     res.json({ status: false, message: "email and password is incorrect" })

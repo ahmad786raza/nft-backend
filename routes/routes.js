@@ -53,6 +53,7 @@ router.post('/login',controllers.login)
 router.post('/tokennotlist',controllers.tokennotlisted)
 router.get('/getallnotlisteddata',controllers.getallnotlisteddata)
 router.post('/updatelisteddata',controllers.updateListedTable)
+router.get('/getalldataforAdmin',controllers.getalldataforAdmin)
 
 
 module.exports = router;
