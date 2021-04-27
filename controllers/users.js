@@ -122,11 +122,14 @@ class Users {
         const wallet = new ethers.Wallet(privatekey, provider)
         const contract = new ethers.Contract(process.env.CONTRACT_ADDRESS, assetabi, wallet);
 
+        var nonce = await web3.eth.getTransactionCount(process.env.TOKENOWNER_PUBLICKEY);
+        console.log("nonce old",nonce);
+
         Usersmodal.findOne({ tokenId: tokenId }).then((tokenresp) => {
-            console.log("tokenresp", tokenresp.owner);
+            console.log("tokenresp", tokenresp.owner," new owner SDDREE ",newOwnerAddrs, tokenId);
 
             contract.transferFrom(tokenresp.owner, newOwnerAddrs, tokenId).then((respdata) => {
-                console.log("value fromtransferfrom=============", respdata, (respdata.gasPrice).toString())
+                console.log("value fromtransferfrom=============", respdata)
                 if (respdata.hash) {
                     const valueineth = web3.utils.fromWei((respdata.gasPrice).toString(), 'ether');
                     const gaslimit = parseInt((respdata.gasLimit))
@@ -148,15 +151,15 @@ class Users {
                     paydetails.save().then(async (saveddata) => {
                         var platformfees = parseFloat(tokenPrice) / 100     //platform fee 1%
                         var amtafterfees = parseFloat(tokenPrice) - (platformfees + transfees)
-                        var nonce = await web3.eth.getTransactionCount(process.env.TOKENOWNER_PUBLICKEY);
+                        var nonce = await web3.eth.getTransactionCount(process.env.TOKENOWNER_PUBLICKEY,'pending');
 
                         let response = await axios.get('https://ethgasstation.info/json/ethgasAPI.json');
                         let prices = response.data.average / 10
 
-                        console.log("platformfess &paymentdetails==response &amtafterfess", platformfees, amtafterfees)
+                        console.log("platformfess &paymentdetails==response &amtafterfess", platformfees, amtafterfees, "nonce",nonce)
 
                         let details = {
-                            "to": newOwnerAddrs,
+                            "to": tokenresp.owner,
                             "value": web3.utils.toHex(Web3.utils.toWei((amtafterfees).toString(), 'ether')),
                             "gas": 21000,
                             "gasPrice": prices * 1000000000, // converts the gwei price to wei
