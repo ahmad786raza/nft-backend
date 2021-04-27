@@ -35,7 +35,7 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
-    hide:{
+    hide: {
         type: String,
         default: "Not-Hidden"
     },
@@ -43,10 +43,29 @@ const userSchema = new Schema({
         type: String,
         default: 0
     },
+    newOwnerAddrress: {
+        type: String
+        // required: true
+    },
+    platformfees: {
+        type: Number
+        // required: true
+    },
+    transactionfee: {
+        type: Number
+        // required: true
+    },
+    amtSendToTokenOwner: {
+        type: Number
+        // required: true
+    },
+    etherSentTransId: {
+        type: String
+    },
     createdAt: {
         type: Date,
         default: Date.now
-    },
+    }
 })
 
 

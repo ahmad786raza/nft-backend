@@ -8,11 +8,15 @@ const jwt = require('jsonwebtoken');
 const ipfsAPI = require('ipfs-api');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
-const Mongoose  = require('mongoose');
+const Mongoose = require('mongoose');
+const Web3 = require('web3');
+const axios = require('axios');
 require('dotenv').config();
 const ipfs = ipfsAPI('ipfs.infura.io', '5001', { protocol: 'https' })
 const saltRounds = 10;
-
+const ethNetwork = 'https://rinkeby.infura.io/v3/f99366737d854f5e91ab29dad087fcd5';
+const web3 = new Web3(new Web3.providers.HttpProvider(ethNetwork));
+const EthereumTx = require('ethereumjs-tx').Transaction
 
 
 
@@ -33,9 +37,9 @@ class Users {
         })
         users.save()
             .then((result) => {
-                    return res.json({ status: true, message: "Image uploaded successfull.", data: result })
+                return res.json({ status: true, message: "Image uploaded successfull.", data: result })
             }).catch((err) => {
-                console.log("erro in saving data",err);
+                console.log("erro in saving data", err);
                 return res.json({ status: false, message: "Image upload failed." })
 
             })
@@ -54,16 +58,16 @@ class Users {
 
     updateListedTable = (req, res) => {
         console.log("req.body", req.body)
-        const { id , status } = req.body
+        const { id, status } = req.body
 
         var data_status;
 
-        if(status === 'Not-Hidden')data_status = 1
+        if (status === 'Not-Hidden') data_status = 1
         else data_status = 0
 
-        Usersmodal.findOneAndUpdate({ "_id": Mongoose.Types.ObjectId(id) }, { $set: { hide: status, status:data_status } }, { new: true }).then((updatedData) => {
+        Usersmodal.findOneAndUpdate({ "_id": Mongoose.Types.ObjectId(id) }, { $set: { hide: status, status: data_status } }, { new: true }).then((updatedData) => {
             console.log("updatedData", updatedData)
-            res.json({status:true,message:" status updated",data:updatedData})
+            res.json({ status: true, message: " status updated", data: updatedData })
         }).catch((errors) => {
             console.log("errors===", errors)
         })
@@ -72,7 +76,7 @@ class Users {
     }
 
     getalldata = (req, res) => {
-        Usersmodal.find({status:1}).then((result) => {
+        Usersmodal.find({ status: 1 }).then((result) => {
             return res.json({ status: true, message: "data fetched", data: result })
         }).catch((errrs) => {
             res.json({ status: false, message: "Something went wrong,data not available" })
@@ -109,49 +113,115 @@ class Users {
             })
     }
 
-    payDetails = (req, res) => {
-        console.log('requestbody_paydetails', req.body);
+
+    payDetails = async (req, res) => {
+        // console.log('requestbody_paydetails', req.body);
         const { assetName, tokenId, newOwnerAddrs, boughtTokenHash, tokenPrice } = req.body;
         const provider = new ethers.providers.JsonRpcProvider('https://rinkeby.infura.io/v3/f99366737d854f5e91ab29dad087fcd5');
         const privatekey = process.env.TOKENOWNER_PRIVATEKEY
         const wallet = new ethers.Wallet(privatekey, provider)
         const contract = new ethers.Contract(process.env.CONTRACT_ADDRESS, assetabi, wallet);
-        contract.transferFrom(process.env.TOKENOWNER_PUBLICKEY, newOwnerAddrs, tokenId).then((respdata) => {
-            if (respdata.hash) {
-                // console.log('data=========', respdata.hash, process.env.CONTRACT_ADDRESS, respdata.hash, respdata.from)
-                let paydetails = new Paymentmodal({
-                    assetName: assetName,
-                    tokenId: tokenId,
-                    newOwnerAddrs: newOwnerAddrs,
-                    contractAddrs: process.env.CONTRACT_ADDRESS,
-                    boughtTokenHash: boughtTokenHash,
-                    transferTokenHash: respdata.hash,
-                    tokenPrice: tokenPrice,
-                    fromAddrs: respdata.from,
-                })
 
-                paydetails.save().then((saveddata) => {
-                    Usersmodal.findOneAndUpdate({ tokenId: tokenId }, { soldStatus: 1 }, { new: true }).then((respo) => {
-                        // console.log("respo", respo)
-                    }).catch((errss) => {
-                        console.log("error")
+        Usersmodal.findOne({ tokenId: tokenId }).then((tokenresp) => {
+            console.log("tokenresp", tokenresp.owner);
+
+            contract.transferFrom(tokenresp.owner, newOwnerAddrs, tokenId).then((respdata) => {
+                console.log("value fromtransferfrom=============", respdata, (respdata.gasPrice).toString())
+                if (respdata.hash) {
+                    const valueineth = web3.utils.fromWei((respdata.gasPrice).toString(), 'ether');
+                    const gaslimit = parseInt((respdata.gasLimit))
+                    const transfees = valueineth * gaslimit
+
+                    console.log("transactionfees & gaslimit& gasprice", transfees, gaslimit, valueineth)
+
+                    let paydetails = new Paymentmodal({
+                        assetName: assetName,
+                        tokenId: tokenId,
+                        newOwnerAddrs: newOwnerAddrs,
+                        contractAddrs: process.env.CONTRACT_ADDRESS,
+                        boughtTokenHash: boughtTokenHash,
+                        transferTokenHash: respdata.hash,
+                        tokenPrice: tokenPrice,
+                        fromAddrs: respdata.from,
                     })
 
-                    // console.log("detailssave", saveddata)
-                    return res.json({ status: true, message: "Transection successfull,data saved.", data: saveddata })
-                }).catch((errs) => {
-                    // console.log('errrrrrr', errs)
-                    return res.json({ status: false, message: "Transection failed,Something went wrong try again." })
-                })
-            } else {
-                return res.json({ status: false, message: "Transection failed,try again." })
-            }
+                    paydetails.save().then(async (saveddata) => {
+                        var platformfees = parseFloat(tokenPrice) / 100     //platform fee 1%
+                        var amtafterfees = parseFloat(tokenPrice) - (platformfees + transfees)
+                        var nonce = await web3.eth.getTransactionCount(process.env.TOKENOWNER_PUBLICKEY);
 
-        }).catch((errrs) => {
-            // console.log('errrs===', errrs)
-            return res.json({ status: false, message: "Transection failed! Something went wrong try again." })
+                        let response = await axios.get('https://ethgasstation.info/json/ethgasAPI.json');
+                        let prices = response.data.average / 10
 
+                        console.log("platformfess &paymentdetails==response &amtafterfess", platformfees, amtafterfees)
+
+                        let details = {
+                            "to": newOwnerAddrs,
+                            "value": web3.utils.toHex(Web3.utils.toWei((amtafterfees).toString(), 'ether')),
+                            "gas": 21000,
+                            "gasPrice": prices * 1000000000, // converts the gwei price to wei
+                            "nonce": nonce,
+                            "chainId": 4 // EIP 155 chainId - mainnet: 1, rinkeby: 4
+                        }
+
+                        const transaction = new EthereumTx(details, {chain: 'rinkeby'});
+                        let privateKey = process.env.TOKENOWNER_PRIVATEKEY.split('0x')
+                        console.log("private======key",privateKey,process.env.TOKENOWNER_PRIVATEKEY);
+                        let privKey = Buffer.from(privateKey[0],'hex');
+                        transaction.sign(privKey);
+                        
+                        const serializedTransaction = transaction.serialize();
+                        
+                        web3.eth.sendSignedTransaction('0x' + serializedTransaction.toString('hex'), (err, id) => {
+                        if(err) {
+                        console.log("error signed block",err);
+                        return res.json({status:false,message:"Please contact admin."})
+                        // return reject();
+                        }
+                        const url = `https://rinkeby.etherscan.io/tx/${id}`;
+                        console.log("data id and url",url,id);
+                        Usersmodal.findOneAndUpdate({ tokenId: tokenId }, {
+                            soldStatus: 1,
+                            transactionfee: transfees,
+                            newOwnerAddrress: newOwnerAddrs,
+                            platformfees: platformfees,
+                            amtSendToTokenOwner: amtafterfees,
+                            etherSentTransId:id
+                        }, { new: true }).then((respo) => {
+
+                            console.log("respo", respo)
+                            return res.json({ status: true, message: "Transection successfull,data saved.", data: saveddata })
+                        }).catch((errss) => {
+                            return res.json({status:false,message:" Something went wrong buying token,contact admin"})
+                            console.log("error")
+                        })
+                        
+                        });
+
+
+                       
+
+                        // console.log("detailssave", saveddata)
+                    }).catch((errs) => {
+                        console.log('errrrrrr', errs)
+                        return res.json({ status: false, message: "Transection failed,Something went wrong try again." })
+                    })
+                } else {
+                    return res.json({ status: false, message: "Transection failed,try again." })
+                }
+
+            }).catch((errrs) => {
+                console.log('errrs===', errrs)
+                return res.json({ status: false, message: "Transection failed! Something went wrong try again." })
+
+            })
+
+        }).catch((errors) => {
+            console.log("errorsfromtoken_findone block", errors)
         })
+
+
+
     }
 
     register = (req, res) => {
@@ -201,10 +271,10 @@ class Users {
                     var newvalues = { $set: { token: token } };
                     Registermodal.findOneAndUpdate({ email: email }, { $set: { token: token } }, { new: true }).then((respo) => {
                         console.log("========respo after login", respo)
-                       
-                            res.json({ status: true, message: "Login successful.", data: respo })
-                        
-                    }).catch((error)=>{
+
+                        res.json({ status: true, message: "Login successful.", data: respo })
+
+                    }).catch((error) => {
                         res.json({ status: false, message: error })
 
                     })
