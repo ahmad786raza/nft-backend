@@ -14,9 +14,25 @@ const axios = require('axios');
 require('dotenv').config();
 const ipfs = ipfsAPI('ipfs.infura.io', '5001', { protocol: 'https' })
 const saltRounds = 10;
-const ethNetwork = 'https://rinkeby.infura.io/v3/f99366737d854f5e91ab29dad087fcd5';
+const ethNetwork = 'https://data-seed-prebsc-1-s1.binance.org:8545/';
 const web3 = new Web3(new Web3.providers.HttpProvider(ethNetwork));
 const EthereumTx = require('ethereumjs-tx').Transaction
+//const { bnbClient } = require("@binance-chain/javascript-sdk")
+const { BncClient } = require("@binance-chain/javascript-sdk")
+
+const baseURL = "https://testnet-dex.binance.org"
+const net = "testnet"
+const Common = require('@ethereumjs/common')
+
+
+httpClient = axios.create({
+    baseURL:  baseURL + "/api/v1",
+    contentType: "application/json",
+  })
+
+  bnbClient = new BncClient(baseURL);
+  bnbClient.chooseNetwork(net)
+  bnbClient.initChain()
 
 
 
@@ -117,7 +133,11 @@ class Users {
     payDetails = async (req, res) => {
         // console.log('requestbody_paydetails', req.body);
         const { assetName, tokenId, newOwnerAddrs, boughtTokenHash, tokenPrice } = req.body;
-        const provider = new ethers.providers.JsonRpcProvider('https://rinkeby.infura.io/v3/f99366737d854f5e91ab29dad087fcd5');
+
+
+
+
+        const provider = new ethers.providers.JsonRpcProvider('https://data-seed-prebsc-1-s1.binance.org:8545/');
         const privatekey = process.env.TOKENOWNER_PRIVATEKEY
         const wallet = new ethers.Wallet(privatekey, provider)
         const contract = new ethers.Contract(process.env.CONTRACT_ADDRESS, assetabi, wallet);
@@ -135,8 +155,7 @@ class Users {
                     const gaslimit = parseInt((respdata.gasLimit))
                     const transfees = valueineth * gaslimit
 
-                    console.log("transactionfees & gaslimit& gasprice", transfees, gaslimit, valueineth)
-
+                    
                     let paydetails = new Paymentmodal({
                         assetName: assetName,
                         tokenId: tokenId,
@@ -147,64 +166,68 @@ class Users {
                         tokenPrice: tokenPrice,
                         fromAddrs: respdata.from,
                     })
+                    console.log("transactionfees & gaslimit& gasprice", transfees, gaslimit, valueineth)
 
                     paydetails.save().then(async (saveddata) => {
                         var platformfees = parseFloat(tokenPrice) / 100     //platform fee 1%
                         var amtafterfees = parseFloat(tokenPrice) - (platformfees + transfees)
                         var nonce = await web3.eth.getTransactionCount(process.env.TOKENOWNER_PUBLICKEY,'pending');
 
-                        let response = await axios.get('https://ethgasstation.info/json/ethgasAPI.json');
-                        let prices = response.data.average / 10
-
-                        console.log("platformfess &paymentdetails==response &amtafterfess", platformfees, amtafterfees, "nonce",nonce)
+                        console.log("platformfess &amtafterfess", platformfees, amtafterfees, "nonce",nonce)
 
                         let details = {
                             "to": tokenresp.owner,
-                            "value": web3.utils.toHex(Web3.utils.toWei((amtafterfees).toString(), 'ether')),
-                            "gas": 21000,
-                            "gasPrice": prices * 1000000000, // converts the gwei price to wei
-                            "nonce": nonce,
-                            "chainId": 4 // EIP 155 chainId - mainnet: 1, rinkeby: 4
+                            "value": web3.utils.toWei((amtafterfees).toString(), 'ether'),
+                            gas: 21000,
+                            "nonce": nonce
+                        }
+                        console.log("details tx",details);
+
+                        try{
+                            const createTransaction = await web3.eth.accounts.signTransaction(details,
+                                process.env.TOKENOWNER_PRIVATEKEY
+                             );
+
+                                                // Send Tx and Wait for Receipt
+                        const createReceipt = await web3.eth.sendSignedTransaction(
+                            createTransaction.rawTransaction
+                        );
+                        console.log("full receipt  ==> ",createReceipt);
+                        console.log(
+                            `Transaction successful with hash: ${createReceipt.transactionHash}`
+                        );
+
+                        if(createReceipt.transactionHash){
+                            Usersmodal.findOneAndUpdate({ tokenId: tokenId }, {
+                                soldStatus: 1,
+                                transactionfee: transfees,
+                                newOwnerAddrress: newOwnerAddrs,
+                                platformfees: platformfees,
+                                amtSendToTokenOwner: amtafterfees,
+                                etherSentTransId:createReceipt.transactionHash
+                            }, { new: true }).then((respo) => {
+    
+                                console.log("respo", respo)
+                                return res.json({ status: true, message: "Transection successfull,data saved.", data: saveddata })
+                            }).catch((errss) => {
+                                return res.json({status:false,message:" Something went wrong buying token,contact admin"})
+                                console.log("error")
+                            })
+                        }
+                        else{
+                            console.log("createReceipt exception",createReceipt);
+                        return res.json({ status: false, message: createReceipt })
                         }
 
-                        const transaction = new EthereumTx(details, {chain: 'rinkeby'});
-                        let privateKey = process.env.TOKENOWNER_PRIVATEKEY.split('0x')
-                        console.log("private======key",privateKey,process.env.TOKENOWNER_PRIVATEKEY);
-                        let privKey = Buffer.from(privateKey[0],'hex');
-                        transaction.sign(privKey);
                         
-                        const serializedTransaction = transaction.serialize();
+                    }
+                    catch(exception){
+                        console.log("exception e",exception);
+                        return res.json({ status: false, message: exception })
+
+                    };
                         
-                        web3.eth.sendSignedTransaction('0x' + serializedTransaction.toString('hex'), (err, id) => {
-                        if(err) {
-                        console.log("error signed block",err);
-                        return res.json({status:false,message:"Please contact admin."})
-                        // return reject();
-                        }
-                        const url = `https://rinkeby.etherscan.io/tx/${id}`;
-                        console.log("data id and url",url,id);
-                        Usersmodal.findOneAndUpdate({ tokenId: tokenId }, {
-                            soldStatus: 1,
-                            transactionfee: transfees,
-                            newOwnerAddrress: newOwnerAddrs,
-                            platformfees: platformfees,
-                            amtSendToTokenOwner: amtafterfees,
-                            etherSentTransId:id
-                        }, { new: true }).then((respo) => {
-
-                            console.log("respo", respo)
-                            return res.json({ status: true, message: "Transection successfull,data saved.", data: saveddata })
-                        }).catch((errss) => {
-                            return res.json({status:false,message:" Something went wrong buying token,contact admin"})
-                            console.log("error")
-                        })
-                        
-                        });
-
-
                        
-
-                        // console.log("detailssave", saveddata)
                     }).catch((errs) => {
                         console.log('errrrrrr', errs)
                         return res.json({ status: false, message: "Transection failed,Something went wrong try again." })

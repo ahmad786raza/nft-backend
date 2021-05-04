@@ -6,6 +6,8 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "@binance-chain/javascript-sdk": "^4.1.1",
+    "@ethereumjs/common": "^2.2.0",
     "axios": "^0.21.1",
     "bcrypt": "^5.0.1",
     "cookie-parser": "~1.4.4",
@@ -13,6 +15,7 @@
     "debug": "~2.6.9",
     "dotenv": "^8.2.0",
     "ejs": "~2.6.1",
+    "ethereumjs-common": "^1.5.2",
     "ethereumjs-tx": "^2.1.2",
     "ethers": "^5.1.0",
     "express": "~4.16.1",

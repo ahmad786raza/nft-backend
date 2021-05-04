@@ -1,20 +1,6 @@
 [
 	{
 		"constant": true,
-		"inputs": [],
-		"name": "getTokenId",
-		"outputs": [
-			{
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
 		"inputs": [
 			{
 				"name": "interfaceId",
@@ -184,17 +170,17 @@
 		"type": "function"
 	},
 	{
-		"constant": false,
-		"inputs": [
+		"constant": true,
+		"inputs": [],
+		"name": "getCurrentTokenId",
+		"outputs": [
 			{
-				"name": "_assetID",
+				"name": "",
 				"type": "uint256"
 			}
 		],
-		"name": "buyNFT",
-		"outputs": [],
 		"payable": false,
-		"stateMutability": "nonpayable",
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -339,25 +325,6 @@
 			}
 		],
 		"name": "tokenURI",
-		"outputs": [
-			{
-				"name": "",
-				"type": "string"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [
-			{
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "assets",
 		"outputs": [
 			{
 				"name": "",
