@@ -7,9 +7,9 @@ const jwt = require('jsonwebtoken');
 
 
 verifytoken = (req, res, next) => {
-  console.log("req.headers", req.headers)
-  var token = req.headers.authtoken
-  console.log("tokenvalue===",token)
+    var token = req.headers.authtoken
+    console.log("req.headers", req.headers,token)
+
   if (token) {
       jwt.verify(token, process.env.SECRETKEY_JWT, function (err, respData) {
           if (err) {
@@ -43,18 +43,23 @@ verifytoken = (req, res, next) => {
 
  
 /* GET users listing. */
-router.post('/uploadImage',verifytoken, controllers.uploadImage);
+router.post('/generateAssets',verifytoken, controllers.generateAssets);
 router.get('/getTokenId',verifytoken,controllers.getTokenID);
 router.get('/getalldata',controllers.getalldata);
 router.post('/getsingledata',verifytoken,controllers.getSingleData);
 router.post('/paymentdetail',verifytoken,controllers.payDetails);
 router.post('/register',controllers.register);
-router.post('/login',controllers.login)
-router.post('/tokennotlist',controllers.tokennotlisted)
-router.get('/getallnotlisteddata',controllers.getallnotlisteddata)
-router.post('/updatelisteddata',controllers.updateListedTable)
-router.get('/getalldataforAdmin',controllers.getalldataforAdmin)
-
+router.post('/login',controllers.login);
+router.post('/updatelisteddata',controllers.updateListedTable);
+router.get('/getalldataforAdmin',controllers.getalldataforAdmin);
+router.post('/updateassetcount',controllers.updatecouter);
+router.post('/userhistory',verifytoken,controllers.userHistory);
+router.get('/uritokendetails/:id',controllers.getTokenDetails)
+router.post('/updateprice',verifytoken,controllers.updatePrice);
+router.post('/cancellisting',verifytoken,controllers.cancelListing);
+ router.post('/tokendetails',verifytoken,controllers.tokenDetails)
+// router.post('/tokennotlist',controllers.tokennotlisted);
+// router.get('/getallnotlisteddata',controllers.getallnotlisteddata);
 
 module.exports = router;
 

@@ -13,7 +13,7 @@ const userSchema = new Schema({
     },
     price: {
         type: Number,
-        required: true
+        default: null
     },
     ipfsHash: {
         type: String,
@@ -35,6 +35,15 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
+    username:{
+        type:String,
+        required:true
+    },
+    listingtype:{
+        type:String,
+        required:false,
+        default:"Not-Listed"
+    },
     hide: {
         type: String,
         default: "Not-Hidden"
@@ -47,20 +56,9 @@ const userSchema = new Schema({
         type: String
         // required: true
     },
-    platformfees: {
-        type: Number
-        // required: true
-    },
-    transactionfee: {
-        type: Number
-        // required: true
-    },
-    amtSendToTokenOwner: {
-        type: Number
-        // required: true
-    },
-    etherSentTransId: {
-        type: String
+    count:{
+        type:Number,
+        default:0
     },
     createdAt: {
         type: Date,

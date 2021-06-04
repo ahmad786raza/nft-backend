@@ -10,7 +10,7 @@ const PaymentModalSchema = new Schema({
         type: String,
         required: true
     },
-    newOwnerAddrs: {
+    tonewOwnerAddrs: {
         type: String,
         required: true
     },
@@ -33,6 +33,21 @@ const PaymentModalSchema = new Schema({
     tokenPrice: {
         type: Number,
         required: true
+    },
+    platformfees: {
+        type: Number
+        // required: true
+    },
+    transactionfee: {
+        type: Number
+        // required: true
+    },
+    amtSendToTokenOwner: {
+        type: Number
+        // required: true
+    },
+    etherSentTransId: {
+        type: String
     },
     createdAt: {
         type: Date,
