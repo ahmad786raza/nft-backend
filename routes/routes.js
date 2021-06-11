@@ -58,6 +58,8 @@ router.get('/uritokendetails/:id',controllers.getTokenDetails)
 router.post('/updateprice',verifytoken,controllers.updatePrice);
 router.post('/cancellisting',verifytoken,controllers.cancelListing);
  router.post('/tokendetails',verifytoken,controllers.tokenDetails)
+ router.post('/getotherUserData',verifytoken,controllers.getotherUserData);
+router.get('/alluserregistered',controllers.alluserregistered)
 // router.post('/tokennotlist',controllers.tokennotlisted);
 // router.get('/getallnotlisteddata',controllers.getallnotlisteddata);
 

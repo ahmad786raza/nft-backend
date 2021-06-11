@@ -46,7 +46,7 @@ class Users {
       email,
       username,
     } = req.body;
-    console.log("req.body uploadimage", req.body);
+    console.log("req.body uploadimage", req.body, req);
     const users = new Usersmodal({
       assetName: assetName,
       price: price,
@@ -129,12 +129,35 @@ class Users {
       })
       .catch((errs) => {
         console.log("respon=====>", errs);
+        count;
       });
   }
 
   userHistory(req, res) {
     const { email } = req.body;
     console.log("current user========>", req.currentuser, email);
+    Usersmodal.find({ email: email })
+      .then((respdetail) => {
+        console.log("resdata====+++++++", respdetail);
+        return res.json({
+          status: true,
+          message: "User full details",
+          userdetails: respdetail,
+        });
+      })
+      .catch((errror) => {
+        console.log("error", errror);
+        return res.json({
+          status: false,
+          message: "No data available",
+          error: errror,
+        });
+      });
+  }
+
+  getotherUserData(req, res) {
+    const { email } = req.body;
+
     Usersmodal.find({ email: email })
       .then((respdetail) => {
         console.log("resdata====+++++++", respdetail);
@@ -267,7 +290,7 @@ class Users {
   };
 
   getalldata = (req, res) => {
-    Usersmodal.find({ listingtype: "Listed"})
+    Usersmodal.find({ listingtype: "Listed" })
       .sort({ count: -1 })
       .then((result) => {
         return res.json({
@@ -354,13 +377,12 @@ class Users {
 
     Usersmodal.findOne({ tokenId: tokenId })
       .then((tokenresp) => {
-          console.log("ssssss",tokenresp)
+        console.log("ssssss", tokenresp);
         contract
           .transferFrom(tokenresp.owner, newOwnerAddrs, tokenId)
-          .then( async(respdata) => {
+          .then(async (respdata) => {
             console.log("value fromtransferfrom=============", respdata);
             if (respdata.hash) {
-
               const valueineth = web3.utils.fromWei(
                 respdata.gasPrice.toString(),
                 "ether"
@@ -370,24 +392,30 @@ class Users {
 
               var platformfees = parseFloat(tokenPrice) / 100; //platform fee 1%
 
-              console.log("pricesss.",tokenPrice , "  ",platformfees ,"  ", transfees);
+              console.log(
+                "pricesss.",
+                tokenPrice,
+                "  ",
+                platformfees,
+                "  ",
+                transfees
+              );
               var amtafterfees =
                 parseFloat(tokenPrice) - (platformfees + transfees);
 
-                console.log("amt after fee",amtafterfees);
+              console.log("amt after fee", amtafterfees);
               var nonce = await web3.eth.getTransactionCount(
                 process.env.TOKENOWNER_PUBLICKEY,
                 "pending"
               );
-              
-              try {
 
-              let details = {
-                to: tokenresp.owner,
-                value: web3.utils.toWei(amtafterfees.toString(), "ether"),
-                gas: 21000,
-                nonce: nonce,
-              };
+              try {
+                let details = {
+                  to: tokenresp.owner,
+                  value: web3.utils.toWei(amtafterfees.toString(), "ether"),
+                  gas: 21000,
+                  nonce: nonce,
+                };
 
                 const createTransaction =
                   await web3.eth.accounts.signTransaction(
@@ -442,7 +470,7 @@ class Users {
                         });
                       })
                       .catch((errss) => {
-                          console.log("errss");
+                        console.log("errss");
                         return res.json({
                           status: false,
                           message:
@@ -461,7 +489,6 @@ class Users {
                 console.log("exception e", exception);
                 return res.json({ status: false, message: exception });
               }
-
             } else {
               return res.json({
                 status: false,
@@ -577,6 +604,22 @@ class Users {
         // console.log('errss_catchblock', errss)
       });
   };
+
+  alluserregistered(req, res) {
+    Registermodal.find()
+      .then((users) => {
+        console.log("alluser", users);
+        return res.json({
+          status: true,
+          message: "All users details",
+          allusers: users,
+        });
+      })
+      .catch((err) => {
+        console.log("error", err);
+        return res.json({ status: false, message: "Users Not found" });
+      });
+  }
 
   // tokennotlisted = (req, res) => {
   //     const { assetName, price, description, tokenId, owner, ipfsHash, email,username } = req.body
