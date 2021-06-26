@@ -169,6 +169,7 @@ class Users {
                       listingtype: "Listed",
                       sellingtype: "Auction",
                       bidtime: bidtime,
+                      soldStatus : '0'
                     },
                   },
                   { new: true }
@@ -428,7 +429,7 @@ class Users {
     console.log("req.body", req.body);
     Usersmodal.findOneAndUpdate(
       { tokenId: tokenId },
-      { $set: { price: price, listingtype: "Listed", sellingtype: "Direct" } },
+      { $set: { price: price, listingtype: "Listed", sellingtype: "Direct" , 'soldStatus' : '0'} },
       { new: true }
     )
       .then((updatedvalue) => {
