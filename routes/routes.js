@@ -57,9 +57,14 @@ router.post('/userhistory',verifytoken,controllers.userHistory);
 router.get('/uritokendetails/:id',controllers.getTokenDetails)
 router.post('/updateprice',verifytoken,controllers.updatePrice);
 router.post('/cancellisting',verifytoken,controllers.cancelListing);
- router.post('/tokendetails',verifytoken,controllers.tokenDetails)
- router.post('/getotherUserData',verifytoken,controllers.getotherUserData);
+router.post('/tokendetails',verifytoken,controllers.tokenDetails)
+router.post('/getotherUserData',verifytoken,controllers.getotherUserData);
 router.get('/alluserregistered',controllers.alluserregistered)
+router.post('/placebid',verifytoken,controllers.placeBid)
+router.post('/placeAuction',verifytoken,controllers.placeAuction)
+router.post('/checkuserauc',verifytoken,controllers.checkUserAuc)
+router.post('/cancelauc',verifytoken,controllers.cancelAuc)
+router.post('/nftownerauxlist',verifytoken,controllers.NftOwnerAuxList)
 // router.post('/tokennotlist',controllers.tokennotlisted);
 // router.get('/getallnotlisteddata',controllers.getallnotlisteddata);
 

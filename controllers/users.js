@@ -1,6 +1,7 @@
 const Usersmodal = require("../modals/users");
 const Paymentmodal = require("../modals/Paymentmodal");
 const Registermodal = require("../modals/register");
+const Biddingmodal = require("../modals/bidding");
 // const Tokennotlistusermodel = require('../modals/tokennotlistmodel');
 // const Tokendetailsmodal = require('../modals/tokendetails');
 const assetabi = require("../abis/assets.json");
@@ -35,7 +36,208 @@ bnbClient.chooseNetwork(net);
 bnbClient.initChain();
 
 class Users {
-  generateAssets(req, res, next) {
+  NftOwnerAuxList(req, res) {
+    const { nftTokenId } = req.body;
+    console.log("req.body", nftTokenId);
+    Biddingmodal.find({ nftTokenId: nftTokenId })
+      .then((allAuxusers) => {
+        console.log("all users bid for owner nft", allAuxusers);
+        if (allAuxusers) {
+          return res.json({
+            status: true,
+            message: "All user for Auctions ",
+            AucUserlist: allAuxusers,
+          });
+        } else {
+          return res.json({
+            status: false,
+            message: "Auc Users list not found",
+          });
+        }
+      })
+      .catch((err) => {
+        console.log("catch block", err);
+        return res.json({
+          status: false,
+          message: "Auc Users list not found",
+          error: err,
+        });
+      });
+  }
+
+  placeAuction(req, res) {
+    const { nftTokenId, bidPrice, email } = req.body;
+    const dateAndTime = new Date().getTime();
+    console.log(
+      "Auction",
+      nftTokenId,
+      bidPrice,
+      email,
+      dateAndTime,
+      req.currentuser._id
+    );
+    let bidObj = {
+      email: email,
+      nftTokenId: nftTokenId,
+      tokenBidPrice: bidPrice,
+      bidTime: dateAndTime,
+      userId: Mongoose.Types.ObjectId(req.currentuser._id),
+    }
+    Biddingmodal.create(bidObj).then((data) => {
+      return res.json({
+        status: true,
+        message: "Bid details saved",
+        data: data,
+      });
+    }).catch((err)=>{
+      return res.json({
+        status: false,
+        message: "Bid details not saved",
+        data: err.description,
+      });    
+    })
+    
+  }
+
+  checkUserAuc(req, res) {
+    const { nftTokenId, email } = req.body;
+    console.log("req.body", nftTokenId, email);
+    Biddingmodal.findOne({ email: email ,nftTokenId: nftTokenId })
+      .then((resp) => {
+        console.log("resp", resp);
+        if (resp) {
+          return res.json({
+            status: true,
+            message: "This email and Nft Token already exists",
+            data: resp,
+          });
+        } else {
+          return res.json({
+            status: false,
+            message: "Email and Nft not found",
+          });
+        }
+      })
+      .catch((error) => {
+        console.log("err catch block", err);
+        return res.json({
+          status: false,
+          message: "Something went wrong ,Try again",
+        });
+      });
+  }
+
+  cancelAuc(req, res) {
+    const { email, nftTokenId } = req.body;
+    Biddingmodal.findOneAndDelete(
+      { email: email, nftTokenId: nftTokenId })
+      .then((deleteddata) => {
+        console.log("deleted data", deleteddata);
+        if (deleteddata) {
+          return res.json({ status: true, message: "Data deleted" });
+        } else {
+          return res.json({ status: false, message: "Data not deleted" });
+        }
+      })
+      .catch((error) => {
+        console.log("err", error);
+        return res.json({ status: false, message: "Data not deleted" });
+      });
+  }
+
+  placeBid(req, res) {
+    const { nftTokenId, bidPrice, bidtime, email } = req.body;
+    console.log("=========", nftTokenId, bidPrice, bidtime);
+    Usersmodal.findOne({ email: email })
+      .then((resp) => {
+        if (resp) {
+          console.log("resp value in bid api", resp);
+          Usersmodal.findOne({ nftTokenId: nftTokenId })
+            .then((respvalue) => {
+              console.log("find by nfttoken id resp", respvalue);
+              if (respvalue) {
+                return res.json({
+                  status: false,
+                  message: "You have already placed bid for this nft token.",
+                });
+              } else {
+                Usersmodal.findOneAndUpdate(
+                  { tokenId: nftTokenId },
+                  {
+                    $set: {
+                      price: bidPrice,
+                      listingtype: "Listed",
+                      sellingtype: "Auction",
+                      bidtime: bidtime,
+                    },
+                  },
+                  { new: true }
+                )
+                  .then((updatedvalue) => {
+                    console.log("updated value", updatedvalue);
+                    return res.json({
+                      status: true,
+                      message:
+                        "Price updated and bidding details saved for your another nft ",
+                      updatedData: updatedvalue,
+                    });
+                  })
+                  .catch((errs) => {
+                    console.log("error", errs);
+                    return res.json({
+                      status: false,
+                      message: "Value not updated",
+                      Error: errs,
+                    });
+                  });
+              }
+            })
+            .catch((errors) => {
+              console.log("error nfttokenid catch block", errors);
+              return res.json({
+                status: false,
+                message: "Error,try again",
+                Error: errors,
+              });
+            });
+        } else {
+          Usersmodal.findOneAndUpdate(
+            { tokenId: nftTokenId },
+            {
+              $set: {
+                price: bidPrice,
+                listingtype: "Listed",
+                sellingtype: "Auction",
+                bidtime: bidtime,
+              },
+            },
+            { new: true }
+          )
+            .then((updatedvalue) => {
+              console.log("updated value", updatedvalue);
+              return res.json({
+                status: true,
+                message: "Price updated and bidding details saved",
+                updatedData: updatedvalue,
+              });
+            })
+            .catch((errs) => {
+              console.log("error", errs);
+              return res.json({
+                status: false,
+                message: "Value not updated",
+                Error: errs,
+              });
+            });
+        }
+      })
+      .catch((err) => {
+        console.log("====err", err);
+        res.json({ status: false, message: "Something went wrong ,check db" });
+      });
+  }
+
+  generateAssets(req, res) {
     const {
       assetName,
       price,
@@ -226,7 +428,7 @@ class Users {
     console.log("req.body", req.body);
     Usersmodal.findOneAndUpdate(
       { tokenId: tokenId },
-      { $set: { price: price, listingtype: "Listed" } },
+      { $set: { price: price, listingtype: "Listed", sellingtype: "Direct" } },
       { new: true }
     )
       .then((updatedvalue) => {
@@ -249,10 +451,16 @@ class Users {
 
   cancelListing(req, res) {
     const { tokenId } = req.body;
-    console.log("req.body", req.body);
     Usersmodal.findOneAndUpdate(
       { tokenId: tokenId },
-      { $set: { price: null, listingtype: "Not-Listed" } },
+      {
+        $set: {
+          price: null,
+          listingtype: "Not-Listed",
+          sellingtype: "",
+          bidtime: "",
+        },
+      },
       { new: true }
     )
       .then((updatedvalue) => {
@@ -335,10 +543,14 @@ class Users {
   //     })
   // }
 
-  getSingleData = (req, res) => {
+  getSingleData = async (req, res) => {
     const { tokenId } = req.body;
-    Usersmodal.findOne({ tokenId: tokenId })
-      .then((singledata) => {
+     Usersmodal.findOne({ tokenId: tokenId })
+      .then(async (singledata)  => {
+        console.log("single data details", singledata);
+        if(singledata.sellingtype === 'Auction' && singledata.soldStatus === '0'){
+          await this.bidtimedifference(singledata);
+        }
         return res.json({
           status: true,
           message: "data fetched.",
@@ -352,6 +564,53 @@ class Users {
         });
       });
   };
+
+  async bidtimedifference(data) {
+    let todaytime = new Date().getTime();
+    let bidexacttime = new Date(data.bidtime).getTime();
+    let objId;
+    let email;
+    let maxPrice;
+    var highest = Number.NEGATIVE_INFINITY;
+
+    if (parseInt(todaytime) > parseInt(bidexacttime) && data.soldStatus === "0") {
+
+      console.log("else========biddifference", todaytime, bidexacttime, data);
+      Biddingmodal.find({ nftTokenId: data.tokenId })
+        .then((resp) => {
+          console.log("response", resp);
+          for (var i = resp.length - 1; i >= 0; i--) {
+            maxPrice = resp[i].tokenBidPrice;
+            if (maxPrice > highest) {
+              highest = maxPrice;
+              objId = resp[i]._id;
+              email = resp[i].email;
+            }
+          }
+          console.log("max price==========", highest, objId, email);
+          Biddingmodal.updateMany({ nftTokenId: data.tokenId },{ status: "NOT-WIN" })
+            .then((updatedvalue) => {
+              console.log("=====", updatedvalue,objId);
+              var user_id = objId;
+              Biddingmodal.findByIdAndUpdate(user_id, { status: "WIN" })
+                .then((updatedData) => {
+                  console.log("updatedData", updatedData);
+                })
+                .catch((er) => {
+                  console.log("er", er);
+                });
+            })
+            .catch((errs) => {
+              console.log("errs===", errs);
+            });
+        })
+        .catch((err) => {
+          console.log("errr", err);
+        });
+    } else {
+      
+    }
+  }
 
   payDetails = async (req, res) => {
     // console.log('requestbody_paydetails', req.body);
@@ -379,7 +638,7 @@ class Users {
       .then((tokenresp) => {
         console.log("ssssss", tokenresp);
         contract
-          .transferFrom(tokenresp.owner, newOwnerAddrs, tokenId)
+          .transferFrom(tokenresp.owner, newOwnerAddrs, tokenId,)
           .then(async (respdata) => {
             console.log("value fromtransferfrom=============", respdata);
             if (respdata.hash) {
@@ -392,14 +651,7 @@ class Users {
 
               var platformfees = parseFloat(tokenPrice) / 100; //platform fee 1%
 
-              console.log(
-                "pricesss.",
-                tokenPrice,
-                "  ",
-                platformfees,
-                "  ",
-                transfees
-              );
+              console.log("pricesss.",tokenPrice, "  ",platformfees, "  ",transfees);
               var amtafterfees =
                 parseFloat(tokenPrice) - (platformfees + transfees);
 
@@ -453,12 +705,12 @@ class Users {
                       {
                         soldStatus: 1,
                         newOwnerAddrress: newOwnerAddrs,
-
-                        price: null,
+                        price: tokenPrice,
                         owner: newOwnerAddrs,
                         email: toemail,
                         username: tousername,
                         listingtype: "Not-Listed",
+                        sellingtype: "",
                       },
                       { new: true }
                     )
